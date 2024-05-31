@@ -4,7 +4,7 @@ Author: Ne0tea
 version: 
 Date: 2024-05-27 19:21:44
 LastEditors: Ne0tea
-LastEditTime: 2024-05-28 09:35:50
+LastEditTime: 2024-05-31 16:54:21
 '''
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -23,9 +23,12 @@ def draw_dotplot_with_highlight(dataframe,yregion,xregion,query,ref,store_dir=os
     # 添加 y 轴区域的背景色
     ax.axhspan(yregion[0], yregion[1], color='#780000', alpha=0.25)
     for _, row in dataframe.iterrows():
-        plt.plot( [row['target_start'], row['target_end']], [row['query_start'], row['query_end']],
-                markersize=2,marker='o', linestyle='-',linewidth=2,color='black')
-
+        if row['strand'] == '+':
+            plt.plot( [row['target_start'], row['target_end']], [row['query_start'], row['query_end']],
+                    markersize=2,marker='o', linestyle='-',linewidth=2,color='black')
+        elif row['strand'] == '-':
+            plt.plot( [row['target_end'],row['target_start']], [row['query_start'], row['query_end']],
+                    markersize=2,marker='o', linestyle='-',linewidth=2,color='black')
     # plt.title('Dot Plot of PAF Alignments')
     plt.xlabel(ref)
     plt.ylabel(query)
@@ -57,7 +60,8 @@ def main(paf_file,centro_file,filter_len,store_dir):
     plot_pre=df['query_name'].unique()
 
     for i in plot_pre:
-        cur_df = df[df['query_name'].str.contains(i)]
+        cur_chr=i.split('_')[0]
+        cur_df = df[((df['query_name'].str.contains(cur_chr,na=False)) & (df['target_name'].str.contains(cur_chr,na=False)))]
         logging.info(i+'start plotting!')
         if len(cur_df['target_name'].unique()) > 1:
             cur_target=cur_df['target_name'].value_counts().idxmax()
@@ -93,4 +97,3 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, \
                         format='%(asctime)s - %(levelname)s - %(message)s')
     main(args.paf,args.region,args.flen,args.outdir)
-
